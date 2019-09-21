@@ -38,6 +38,7 @@ from future.builtins import *  # noqa
 import json
 import logging
 import string
+import sys
 from future.moves.urllib.parse import urljoin, urlsplit
 
 import gevent
@@ -49,7 +50,7 @@ from sqlalchemy import not_
 from cms import config
 from cms.io import Executor, QueueItem, TriggeredService, rpc_method
 from cms.db import SessionGen, Contest, Participation, Task, Submission, \
-    get_submissions
+    get_submissions, get_contest_list
 from cmscommon.datetime import make_timestamp
 
 
@@ -323,9 +324,24 @@ class ProxyService(TriggeredService):
             contest = Contest.get_from_id(self.contest_id, session)
 
             if contest is None:
-                logger.error("Received request for unexistent contest "
+                contests = get_contest_list(session)
+                logger.warning("Received request for unexistent contest "
                              "id %s.", self.contest_id)
-                raise KeyError("Contest not found.")
+
+                # proxy service needs be reconfigured with an existing contest
+                # to continue to function properly.
+                logger.warning("Attempting to recover by binding to a existing "
+                               "contest")
+                contests = get_contest_list(session)
+                n_contests = len(contests)
+                if n_contests <= 0:
+                    logger.error("No existing contests to bind to and recover.")
+                    sys.exit(0)
+                else:
+                    contest = contests[n_contests - 1]
+                    self.contest_id = contest.id
+                    logger.warning("Recovered by binding to a existing contest "
+                                   "with id %s.", contest.id)
 
             contest_id = encode_id(contest.name)
             contest_data = {
@@ -447,6 +463,7 @@ class ProxyService(TriggeredService):
 
         """
         logger.info("Reinitializing rankings.")
+
         self.initialize()
 
     @rpc_method
