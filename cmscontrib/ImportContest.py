@@ -134,7 +134,7 @@ class ContestImporter(object):
             contest_id = contest.id
 
         logger.info("Import finished (new contest id: %s).", contest_id)
-        return  contest_id
+        return contest_id
 
     def _contest_to_db(self, session, new_contest, contest_has_changed):
         """Add the new contest to the DB
