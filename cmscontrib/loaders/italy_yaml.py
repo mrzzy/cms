@@ -226,6 +226,17 @@ class YamlLoader(ContestLoader, TaskLoader, UserLoader, TeamLoader):
         for p in participations:
             p["password"] = build_password(p["password"])
 
+        # copy languages to support for contest
+        languages = load(conf, None, ["programming_languages"])
+        if languages is not None:
+            # verify language supported
+            language_names = [ lang.name for lang in LANGUAGES ]
+            for language in languages:
+                if not language in language_names:
+                    logger.critical(f"Programming Language not supported: {language}")
+                    return None
+            args["languages"] = languages
+
         # Import was successful
         os.remove(os.path.join(self.path, ".import_error_contest"))
 
