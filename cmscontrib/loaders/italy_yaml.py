@@ -168,6 +168,7 @@ class YamlLoader(ContestLoader, TaskLoader, UserLoader, TeamLoader):
 
         load(conf, args, ["name", "nome_breve"])
         load(conf, args, ["description", "nome"])
+        load(conf, args, ["timezone"])
 
         logger.info("Loading parameters for contest %s.", args["name"])
 
